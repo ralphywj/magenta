@@ -19,6 +19,8 @@ enum {
     ACPI_CMD_PS0 = 5,
     ACPI_CMD_BST = 6,
     ACPI_CMD_BIF = 7,
+    ACPI_CMD_SET_EVENT_HANDLE = 8,
+    ACPI_CMD_ENABLE_EVENT = 9,
 };
 
 typedef struct {
@@ -134,3 +136,16 @@ typedef struct {
     char type[32];
     char oem[32];
 } __PACKED acpi_rsp_bif_t;
+
+typedef enum {
+    ACPI_SYSTEM_NOTIFY = (1 << 0),
+    ACPI_DEVICE_NOTIFY = (1 << 1),
+    // GPE, exception, SCI, Fixed
+} acpi_event_type_t;
+typedef struct {
+    acpi_cmd_hdr_t hdr;
+    acpi_event_type_t type;
+} __PACKED acpi_cmd_enable_event_t;
+typedef struct {
+    acpi_rsp_hdr_t hdr;
+} __PACKED acpi_cmd_enable_event_t;

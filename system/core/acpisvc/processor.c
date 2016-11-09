@@ -24,6 +24,9 @@ typedef struct {
     // the namespace tree.
     ACPI_HANDLE ns_node;
     bool root_node;
+    mx_handle_t notify;    // send event packets on this handle
+    uint32_t event_mask;
+    struct list_node node; // all acpi_handle_ctx_t pointing to the same ACPI_HANDLE
 } acpi_handle_ctx_t;
 
 // Command functions.  These should return an error only if the connection
@@ -35,6 +38,8 @@ static mx_status_t cmd_s_state_transition(mx_handle_t h, acpi_handle_ctx_t* ctx,
 static mx_status_t cmd_ps0(mx_handle_t h, acpi_handle_ctx_t* ctx, void* cmd);
 static mx_status_t cmd_bst(mx_handle_t h, acpi_handle_ctx_t* ctx, void* cmd);
 static mx_status_t cmd_bif(mx_handle_t h, acpi_handle_ctx_t* ctx, void* cmd);
+static mx_status_t cmd_set_event_handle(mx_handle_t h, acpi_handle_ctx_t* ctx, void* cmd);
+static mx_status_t cmd_enable_event(mx_handle_t h, acpi_handle_ctx_t* ctx, void* cmd);
 static mx_status_t cmd_new_connection(mx_handle_t h, acpi_handle_ctx_t* ctx, void* cmd);
 
 typedef mx_status_t (*cmd_handler_t)(mx_handle_t, acpi_handle_ctx_t*, void*);
@@ -46,6 +51,8 @@ static const cmd_handler_t cmd_table[] = {
         [ACPI_CMD_PS0] = cmd_ps0,
         [ACPI_CMD_BST] = cmd_bst,
         [ACPI_CMD_BIF] = cmd_bif,
+        [ACPI_CMD_SET_EVENT_HANDLE] = cmd_set_event_handle,
+        [ACPI_CMD_ENABLE_EVENT] = cmd_enable_event,
         [ACPI_CMD_NEW_CONNECTION] = cmd_new_connection,
 };
 
@@ -348,6 +355,7 @@ static mx_status_t cmd_get_child_handle(mx_handle_t h, acpi_handle_ctx_t* ctx, v
     }
     child_ctx->ns_node = child_ns_node;
     child_ctx->root_node = false;
+    list_initialize(&child_ctx->node);
 
     mx_handle_t msg_pipe[2];
     status = mx_channel_create(0, &msg_pipe[0], &msg_pipe[1]);
@@ -601,6 +609,9 @@ static mx_status_t cmd_bif(mx_handle_t h, acpi_handle_ctx_t* ctx, void* _cmd) {
     ACPI_FREE(obj);
 
     return mx_channel_write(h, 0, &rsp, sizeof(rsp), NULL, 0);
+}
+
+static mx_status_t cmd_set_event_handle(mx_handle_t h, acpi_handle_ctx_t* ctx, void* cmd) {
 }
 
 static mx_status_t cmd_new_connection(mx_handle_t h, acpi_handle_ctx_t* ctx, void* _cmd) {
